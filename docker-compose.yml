@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: momcare_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-momcare}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-momcare_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-momcare_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-momcare} -d ${POSTGRES_DB:-momcare_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: momcare_backend
+    restart: always
+    environment:
+      POSTGRES_SERVER: db
+      POSTGRES_USER: ${POSTGRES_USER:-momcare}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-momcare_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-momcare_db}
+      POSTGRES_PORT: 5432
+      SECRET_KEY: ${SECRET_KEY:-super_secret_jwt_key_momcare_2026_change_in_prod}
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      REFRESH_TOKEN_EXPIRE_DAYS: 90
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: momcare_frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
