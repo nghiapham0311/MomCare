@@ -1,8 +1,9 @@
 from typing import List, Optional
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, date
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import cast, Date
 
 from app.db.session import get_db
 from app.models.activity import Activity
@@ -16,15 +17,22 @@ router = APIRouter()
 def list_activities(
     baby_id: UUID = Query(...),
     activity_type: Optional[str] = None,
-    limit: int = 50,
+    target_date: Optional[date] = Query(None, alias="date"),
+    order: str = Query("asc", pattern="^(asc|desc)$"),
+    limit: int = 150,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     query = db.query(Activity).filter(Activity.baby_id == baby_id)
     if activity_type:
         query = query.filter(Activity.activity_type == activity_type)
+    if target_date:
+        query = query.filter(cast(Activity.start_time, Date) == target_date)
     
-    activities = query.order_by(Activity.start_time.desc()).limit(limit).all()
+    if order == "asc":
+        activities = query.order_by(Activity.start_time.asc()).limit(limit).all()
+    else:
+        activities = query.order_by(Activity.start_time.desc()).limit(limit).all()
     return activities
 
 @router.post("/", response_model=ActivityResponse)

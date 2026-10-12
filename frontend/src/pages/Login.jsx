@@ -29,7 +29,16 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-pink-50 to-white px-4 py-8">
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-8 border border-pink-100">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-8 border border-pink-100 overflow-hidden relative">
+        {/* Banner For Hải Yến & Ánh Kim with love <3 */}
+        <div className="mb-6 -mx-8 -mt-8 py-3 px-4 bg-gradient-to-r from-pink-500 via-rose-400 to-pink-500 text-white text-center shadow-xs">
+          <p className="text-xs sm:text-sm font-bold tracking-wide flex items-center justify-center gap-1.5 drop-shadow-xs">
+            <span>✨</span>
+            <span>For Hải Yến &amp; Ánh Kim with love ❤️</span>
+            <span>✨</span>
+          </p>
+        </div>
+
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-pink-500 rounded-full flex items-center justify-center text-3xl mx-auto shadow-md mb-3">
             👶

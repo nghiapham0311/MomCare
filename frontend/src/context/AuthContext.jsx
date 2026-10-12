@@ -11,6 +11,18 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        const token = localStorage.getItem('momcare_access_token');
+        if (token) {
+          try {
+            const userRes = await api.get('/auth/me');
+            setUser(userRes.data);
+            setLoading(false);
+            return;
+          } catch (tokenErr) {
+            // Token might be expired, will try refresh below
+          }
+        }
+
         const response = await api.post('/auth/refresh');
         const { access_token, user: userData } = response.data;
         localStorage.setItem('momcare_access_token', access_token);
