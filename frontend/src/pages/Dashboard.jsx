@@ -61,7 +61,18 @@ export default function Dashboard() {
   const [quickLogType, setQuickLogType] = useState('WAKE');
   const [activityToEdit, setActivityToEdit] = useState(null);
   const [fabOpen, setFabOpen] = useState(false);
-  const [darkModeNotes, setDarkModeNotes] = useState(true);
+  const [darkModeNotes, setDarkModeNotes] = useState(() => {
+    const saved = localStorage.getItem('momcare_dark_mode_notes');
+    return saved !== null ? saved === 'true' : true;
+  });
+
+  const toggleDarkModeNotes = () => {
+    setDarkModeNotes((prev) => {
+      const next = !prev;
+      localStorage.setItem('momcare_dark_mode_notes', String(next));
+      return next;
+    });
+  };
 
   // Baby profile form state
   const [babyName, setBabyName] = useState('');
@@ -444,9 +455,10 @@ export default function Dashboard() {
 
         {/* View Style Switcher (Dark / Light Notes) */}
         <button
-          onClick={() => setDarkModeNotes(!darkModeNotes)}
+          type="button"
+          onClick={toggleDarkModeNotes}
           className="p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800 transition text-[11px]"
-          title="Đổi màu nền Note"
+          title={darkModeNotes ? 'Chuyển sang nền sáng' : 'Chuyển sang nền tối'}
         >
           {darkModeNotes ? <SunMedium size={15} /> : <MoonStar size={15} />}
         </button>

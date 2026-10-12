@@ -117,11 +117,11 @@ export default function RoutineListView({
         {naps.map((cycle, idx) => (
           <div key={idx} className="group">
             {/* Nap Title (no duplicate duration numbers after Nap X; only WT/ST on the right) */}
-            <div className="flex items-center justify-between pb-1 mb-1 border-b border-dashed border-gray-700/40">
-              <span className="font-bold text-sm tracking-wide text-amber-500">
+            <div className={`flex items-center justify-between pb-1 mb-1 border-b border-dashed ${darkMode ? 'border-gray-700/40' : 'border-gray-200'}`}>
+              <span className={`font-bold text-sm tracking-wide ${darkMode ? 'text-amber-500' : 'text-amber-600'}`}>
                 {cycle.title}
               </span>
-              <div className="text-[10px] text-gray-400 opacity-80">
+              <div className={`text-[10px] ${darkMode ? 'text-gray-400' : 'text-gray-500'} font-semibold`}>
                 {cycle.wakeWindowMinutes !== null && cycle.wakeWindowMinutes !== undefined
                   ? `WT: ${formatDuration(cycle.wakeWindowMinutes)}`
                   : ''}
@@ -162,13 +162,13 @@ export default function RoutineListView({
       </div>
 
       {/* Routine Daily Summary Line: e.g. "Wt 8h20 st 4h 550ml" */}
-      <div className="mt-5 pt-3 border-t border-dashed border-gray-700/60 flex items-center justify-between text-xs font-bold">
-        <span className="text-zinc-300">
+      <div className={`mt-5 pt-3 border-t border-dashed ${darkMode ? 'border-gray-700/60' : 'border-gray-200'} flex items-center justify-between text-xs font-bold`}>
+        <span className={darkMode ? 'text-zinc-300' : 'text-gray-800'}>
           Thức: {totals.wtFormatted || '0p'} &nbsp;- Ngủ: {totals.stFormatted || '0p'} &nbsp; {totals.milkMl}ml
           {totals.solidMl > 0 && ` • Cháo: ${totals.solidMl}ml`}
         </span>
         {totals.diapers > 0 && (
-          <span className="text-sky-400 font-medium text-[11px]">
+          <span className={`${darkMode ? 'text-sky-400' : 'text-sky-600'} font-medium text-[11px]`}>
             {totals.diapers} lần tã
           </span>
         )}
@@ -176,8 +176,8 @@ export default function RoutineListView({
 
       {/* Night Events (Ban đêm) */}
       {nightEvents.length > 0 && (
-        <div className="mt-4 pt-3 border-t border-gray-800">
-          <div className="text-xs font-bold text-purple-400 mb-1.5 flex items-center gap-1.5">
+        <div className={`mt-4 pt-3 border-t ${darkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+          <div className={`text-xs font-bold ${darkMode ? 'text-purple-400' : 'text-purple-600'} mb-1.5 flex items-center gap-1.5`}>
             <Moon size={13} />
             <span>Ban đêm:</span>
           </div>
