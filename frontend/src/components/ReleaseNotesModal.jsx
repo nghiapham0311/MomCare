@@ -1,10 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { X, Sparkles, Check } from 'lucide-react';
 
-export const CURRENT_RELEASE_VERSION = 'v1.4.1';
+export const CURRENT_RELEASE_VERSION = 'v1.4.3';
 export const RELEASE_STORAGE_KEY = 'momcare_dismissed_release_version';
 
 const RELEASE_NOTES = [
+  {
+    version: 'v1.4.3',
+    date: '30/10/2026',
+    title: 'Vá lỗi lưu mất dữ liệu khi tải lại & Tối ưu hiển thị giao diện',
+    highlights: [
+      {
+        emoji: '⚡',
+        title: 'Khắc phục mất dữ liệu cữ khi tải lại trên điện thoại',
+        desc: 'Tự động tải 1.000 cữ mới nhất và ghi nhớ chính xác hồ sơ bé đang chọn cùng ngày xem trong bộ nhớ thiết bị, không lo bị biến mất cữ sau khi reload.',
+      },
+      {
+        emoji: '🎨',
+        title: 'Tối ưu Nginx & Làm mới cache giao diện',
+        desc: 'Nâng cấp cấu hình Nginx chống lỗi MIME type, nén gzip và làm mới bundle hash đảm bảo giao diện luôn hiển thị đầy đủ màu sắc và kiểu dáng.',
+      },
+    ],
+  },
   {
     version: 'v1.4.1',
     date: '30/10/2026',

@@ -19,7 +19,7 @@ def get_user_babies(
 ):
     memberships = db.query(FamilyMember).filter(FamilyMember.user_id == current_user.id).all()
     baby_ids = [m.baby_id for m in memberships]
-    babies = db.query(Baby).filter(Baby.id.in_(baby_ids)).all()
+    babies = db.query(Baby).filter(Baby.id.in_(baby_ids)).order_by(Baby.created_at.asc()).all()
     return babies
 
 

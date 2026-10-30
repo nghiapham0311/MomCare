@@ -19,7 +19,7 @@ def list_activities(
     activity_type: Optional[str] = None,
     target_date: Optional[date] = Query(None, alias="date"),
     order: str = Query("asc", pattern="^(asc|desc)$"),
-    limit: int = 150,
+    limit: int = Query(1000, ge=1, le=5000),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):

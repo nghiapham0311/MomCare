@@ -30,7 +30,7 @@ const getLocalDateString = (d = new Date()) => {
 
 const getInitialSelectedDate = () => {
   try {
-    const saved = sessionStorage.getItem('momcare_selected_date');
+    const saved = localStorage.getItem('momcare_selected_date') || sessionStorage.getItem('momcare_selected_date');
     if (saved) return saved;
   } catch (e) {}
   return getLocalDateString();
@@ -129,6 +129,7 @@ export default function Dashboard() {
   const updateSelectedDate = (newDate) => {
     setSelectedDate(newDate);
     try {
+      localStorage.setItem('momcare_selected_date', newDate);
       sessionStorage.setItem('momcare_selected_date', newDate);
     } catch (e) {}
   };
@@ -171,12 +172,28 @@ export default function Dashboard() {
     }
   }, [selectedBaby]);
 
+  const handleSelectBaby = (baby) => {
+    setSelectedBaby(baby);
+    if (baby?.id) {
+      try {
+        localStorage.setItem('momcare_selected_baby_id', baby.id);
+      } catch (e) {}
+    }
+  };
+
   const fetchBabies = async () => {
     try {
       const res = await api.get('/babies/');
-      setBabies(res.data);
-      if (res.data.length > 0) {
-        setSelectedBaby(res.data[0]);
+      const babyList = res.data || [];
+      setBabies(babyList);
+      if (babyList.length > 0) {
+        const savedBabyId = localStorage.getItem('momcare_selected_baby_id');
+        const matched = babyList.find((b) => b.id === savedBabyId);
+        const activeBaby = matched || babyList[0];
+        setSelectedBaby(activeBaby);
+        if (activeBaby?.id) {
+          localStorage.setItem('momcare_selected_baby_id', activeBaby.id);
+        }
       } else {
         openCreateBabyModal();
       }
@@ -189,8 +206,11 @@ export default function Dashboard() {
 
   const fetchActivities = async (babyId) => {
     try {
-      const res = await api.get(`/activities/?baby_id=${babyId}&limit=300&order=asc`);
-      setActivities(res.data);
+      const res = await api.get(`/activities/?baby_id=${babyId}&limit=1000&order=desc`);
+      const sorted = (res.data || []).sort(
+        (a, b) => new Date(a.start_time) - new Date(b.start_time)
+      );
+      setActivities(sorted);
     } catch (err) {
       console.error(err);
     }
@@ -225,7 +245,7 @@ export default function Dashboard() {
         });
         const updatedBaby = res.data;
         setBabies((prev) => prev.map((b) => (b.id === updatedBaby.id ? updatedBaby : b)));
-        setSelectedBaby(updatedBaby);
+        handleSelectBaby(updatedBaby);
         setShowBabyModal(false);
       } else {
         const res = await api.post('/babies/', {
@@ -234,7 +254,7 @@ export default function Dashboard() {
           gender: gender,
         });
         setBabies((prev) => [...prev, res.data]);
-        setSelectedBaby(res.data);
+        handleSelectBaby(res.data);
         setShowBabyModal(false);
       }
     } catch (err) {
@@ -457,7 +477,7 @@ export default function Dashboard() {
                 value={selectedBaby.id}
                 onChange={(e) => {
                   const found = babies.find((b) => b.id === e.target.value);
-                  if (found) setSelectedBaby(found);
+                  if (found) handleSelectBaby(found);
                 }}
                 className="text-[11px] font-semibold text-pink-600 bg-white border border-pink-200 rounded-lg px-1.5 py-0.5 focus:outline-none cursor-pointer"
                 title="Đổi bé"
