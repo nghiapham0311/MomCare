@@ -18,6 +18,8 @@ class DailySummary(BaseModel):
     date: date
     feed_count: int = 0
     feed_total_ml: float = 0
+    solid_count: int = 0
+    solid_total_ml: float = 0
     sleep_count: int = 0
     sleep_total_minutes: float = 0
     diaper_count: int = 0
@@ -44,8 +46,18 @@ def get_daily_summary(
     for act in activities:
         if act.activity_type == "FEED":
             summary.feed_count += 1
-            if act.details and act.details.get("amount_ml"):
-                summary.feed_total_ml += act.details["amount_ml"]
+            if act.details and act.details.get("amount_ml") is not None:
+                try:
+                    summary.feed_total_ml += float(act.details["amount_ml"])
+                except (ValueError, TypeError):
+                    pass
+        elif act.activity_type == "SOLID_FOOD":
+            summary.solid_count += 1
+            if act.details and act.details.get("amount_ml") is not None:
+                try:
+                    summary.solid_total_ml += float(act.details["amount_ml"])
+                except (ValueError, TypeError):
+                    pass
         elif act.activity_type == "SLEEP":
             summary.sleep_count += 1
             if act.details and act.details.get("duration_minutes"):
@@ -92,8 +104,18 @@ def get_weekly_summary(
         s = summaries[act_date]
         if act.activity_type == "FEED":
             s.feed_count += 1
-            if act.details and act.details.get("amount_ml"):
-                s.feed_total_ml += act.details["amount_ml"]
+            if act.details and act.details.get("amount_ml") is not None:
+                try:
+                    s.feed_total_ml += float(act.details["amount_ml"])
+                except (ValueError, TypeError):
+                    pass
+        elif act.activity_type == "SOLID_FOOD":
+            s.solid_count += 1
+            if act.details and act.details.get("amount_ml") is not None:
+                try:
+                    s.solid_total_ml += float(act.details["amount_ml"])
+                except (ValueError, TypeError):
+                    pass
         elif act.activity_type == "SLEEP":
             s.sleep_count += 1
             if act.details and act.details.get("duration_minutes"):

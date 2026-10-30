@@ -36,8 +36,8 @@ export default function QuickLogModal({
   // Common notes
   const [notes, setNotes] = useState('');
 
-  // Quick ML presets from wife's notes: 120, 130, 150, 160, 170, 180, 200
-  const milkPresets = [90, 120, 130, 150, 160, 170, 180, 200];
+  // Quick ML presets: 100 to 200, step +10
+  const milkPresets = [100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200];
   const feedNotePresets = ['cạn bình', 'bú ngoan', 'nhè bớt', 'bú đc 15p thì ỉa lỏng'];
   const diaperPresets = [
     { label: 'Ỉa lỏng', value: 'poop_liquid' },
@@ -122,6 +122,7 @@ export default function QuickLogModal({
     const hrs = String(now.getHours()).padStart(2, '0');
     const mins = String(now.getMinutes()).padStart(2, '0');
     setTimeStr(`${hrs}:${mins}`);
+    setDateStr(getLocalDateStr(now));
   };
 
   const handleSave = (e) => {
@@ -152,6 +153,7 @@ export default function QuickLogModal({
 
     if (type === 'NIGHT') {
       details.is_night = true;
+      details.is_bedtime = true;
     } else {
       delete details.is_night;
     }
@@ -334,7 +336,7 @@ export default function QuickLogModal({
           {type === 'WAKE' && (
             <div className="bg-amber-50/60 border border-amber-200/70 rounded-2xl p-3.5 text-center">
               <span className="text-xs font-bold text-amber-800">
-                ☀️ Bé thức dậy bắt đầu khoảng thức (WT)
+                ☀️ Bé thức dậy (Bắt đầu thời gian thức)
               </span>
               <p className="text-[11px] text-gray-500 mt-1">
                 Hệ thống sẽ tự động tính thời gian thức đến khi bé ngủ cữ tiếp theo.
@@ -518,7 +520,7 @@ export default function QuickLogModal({
           {type === 'SLEEP' && (
             <div className="bg-indigo-50/60 border border-indigo-200/80 rounded-2xl p-3.5 space-y-2">
               <span className="text-xs font-bold text-indigo-900 block">
-                🌙 Bé bắt đầu ngủ (Tính thời gian Nap - ST)
+                🌙 Bé bắt đầu ngủ (Tính thời gian ngủ ngày)
               </span>
               <label className="flex items-center gap-2 cursor-pointer text-xs text-indigo-950 font-medium">
                 <input

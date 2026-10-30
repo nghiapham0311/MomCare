@@ -25,3 +25,11 @@ class GrowthLogResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class GrowthLogUpdate(BaseModel):
+    logged_date: Optional[date] = None
+    weight_kg: Optional[float] = None
+    height_cm: Optional[float] = None
+    head_circ_cm: Optional[float] = None
+    notes: Optional[str] = None

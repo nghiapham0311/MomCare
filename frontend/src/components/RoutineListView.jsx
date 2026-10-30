@@ -116,17 +116,17 @@ export default function RoutineListView({
       <div className="space-y-4">
         {naps.map((cycle, idx) => (
           <div key={idx} className="group">
-            {/* Nap Title (no duplicate duration numbers after Nap X; only WT/ST on the right) */}
+            {/* Nap Title */}
             <div className={`flex items-center justify-between pb-1 mb-1 border-b border-dashed ${darkMode ? 'border-gray-700/40' : 'border-gray-200'}`}>
               <span className={`font-bold text-sm tracking-wide ${darkMode ? 'text-amber-500' : 'text-amber-600'}`}>
                 {cycle.title}
               </span>
               <div className={`text-[10px] ${darkMode ? 'text-gray-400' : 'text-gray-500'} font-semibold`}>
                 {cycle.wakeWindowMinutes !== null && cycle.wakeWindowMinutes !== undefined
-                  ? `WT: ${formatDuration(cycle.wakeWindowMinutes)}`
+                  ? `Thức: ${formatDuration(cycle.wakeWindowMinutes)}`
                   : ''}
                 {cycle.napDurationMinutes !== null && cycle.napDurationMinutes !== undefined
-                  ? `${cycle.wakeWindowMinutes !== null && cycle.wakeWindowMinutes !== undefined ? ' • ' : ''}ST: ${formatDuration(cycle.napDurationMinutes)}`
+                  ? `${cycle.wakeWindowMinutes !== null && cycle.wakeWindowMinutes !== undefined ? ' • ' : ''}Ngủ: ${formatDuration(cycle.napDurationMinutes)}`
                   : ''}
               </div>
             </div>

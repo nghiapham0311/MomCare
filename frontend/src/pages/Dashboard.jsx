@@ -28,6 +28,79 @@ const getLocalDateString = (d = new Date()) => {
   return `${y}-${m}-${day}`;
 };
 
+const getInitialSelectedDate = () => {
+  try {
+    const saved = sessionStorage.getItem('momcare_selected_date');
+    if (saved) return saved;
+  } catch (e) {}
+  return getLocalDateString();
+};
+
+// Helper to calculate night sleep between bedtime on a target date and morning wake on the following day
+const calculateNightSleepForDate = (dateStr, allActivities) => {
+  // Find bedtime sleep on dateStr (supports both SLEEP and NIGHT activity types)
+  const daySleeps = allActivities
+    .filter(
+      (a) =>
+        (a.activity_type === 'SLEEP' || a.activity_type === 'NIGHT') &&
+        getLocalDateString(new Date(a.start_time)) === dateStr
+    )
+    .sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+
+  if (daySleeps.length === 0) return null;
+
+  // Prefer the sleep explicitly marked as is_bedtime, or the latest sleep of the day
+  const explicitBedtime = daySleeps.find((s) => s.details?.is_bedtime);
+  const bedtimeSleep = explicitBedtime || daySleeps[daySleeps.length - 1];
+  const bedtimeTime = new Date(bedtimeSleep.start_time).getTime();
+  const bedtimeStr = formatTimeStr(bedtimeSleep.start_time);
+
+  // Next calendar day
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const nextDateObj = new Date(y, m - 1, d + 1);
+  const nextDateStr = getLocalDateString(nextDateObj);
+
+  // Look for morning WAKE events after bedtime (within 24 hours)
+  const nextWakes = allActivities
+    .filter((a) => {
+      if (a.activity_type !== 'WAKE') return false;
+      const wakeTime = new Date(a.start_time).getTime();
+      const diffMs = wakeTime - bedtimeTime;
+      const wakeDate = getLocalDateString(new Date(a.start_time));
+      return (wakeDate === nextDateStr || diffMs > 0) && diffMs > 0 && diffMs <= 24 * 60 * 60 * 1000;
+    })
+    .sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+
+  if (nextWakes.length === 0) {
+    return {
+      isCompleted: false,
+      bedtimeStr,
+      dateStr,
+    };
+  }
+
+  // Morning wake: if there are multiple wakes, prefer the first wake on the next day
+  const wakesOnNextDay = nextWakes.filter(
+    (w) => getLocalDateString(new Date(w.start_time)) === nextDateStr
+  );
+  const morningWake = wakesOnNextDay.length > 0 ? wakesOnNextDay[0] : nextWakes[0];
+
+  const wakeTime = new Date(morningWake.start_time).getTime();
+  const diffMinutes = Math.round((wakeTime - bedtimeTime) / (1000 * 60));
+
+  if (diffMinutes <= 0) return null;
+
+  return {
+    isCompleted: true,
+    durationMinutes: diffMinutes,
+    durationFormatted: formatDuration(diffMinutes),
+    bedtimeStr,
+    wakeStr: formatTimeStr(morningWake.start_time),
+    startDateStr: dateStr,
+    endDateStr: getLocalDateString(new Date(morningWake.start_time)),
+  };
+};
+
 const calculateWeekAge = (birthDateStr) => {
   if (!birthDateStr) return '';
   const [by, bm, bd] = birthDateStr.split('-').map(Number);
@@ -50,8 +123,15 @@ export default function Dashboard() {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Always default to TODAY in local timezone when opening the app
-  const [selectedDate, setSelectedDate] = useState(() => getLocalDateString());
+  // Default to today or active session date when opening/reloading
+  const [selectedDate, setSelectedDate] = useState(getInitialSelectedDate);
+
+  const updateSelectedDate = (newDate) => {
+    setSelectedDate(newDate);
+    try {
+      sessionStorage.setItem('momcare_selected_date', newDate);
+    } catch (e) {}
+  };
 
   // Modal & FAB states
   const [showBabyModal, setShowBabyModal] = useState(false);
@@ -80,9 +160,8 @@ export default function Dashboard() {
   const [gender, setGender] = useState('boy');
 
   useEffect(() => {
-    // Clear any stale cached date from old versions so it never jumps to yesterday
+    // Clear legacy localStorage key from older versions
     localStorage.removeItem('momcare_last_selected_date');
-    setSelectedDate(getLocalDateString());
     fetchBabies();
   }, []);
 
@@ -172,7 +251,7 @@ export default function Dashboard() {
     });
   }, [activities, selectedDate]);
 
-  // Build EASY routine data (Naps, WT, ST, Milk & Solid sums)
+  // Build EASY routine data (Naps, Thức, Ngủ ngày, Milk & Solid sums)
   const routineData = useMemo(() => {
     return buildDailyRoutine(dayActivities);
   }, [dayActivities]);
@@ -181,6 +260,42 @@ export default function Dashboard() {
   const babyAgeText = useMemo(() => {
     return calculateWeekAge(selectedBaby?.birth_date);
   }, [selectedBaby]);
+
+  // Calculate night sleep duration for selectedDate:
+  // 1. Bedtime started on selectedDate (attributing to selectedDate as the EASY bedtime date)
+  // 2. OR night sleep that ended this morning on selectedDate (so mother sees sleep upon waking)
+  const nightSleepData = useMemo(() => {
+    // 1. Check if there is completed night sleep for bedtime started on selectedDate
+    const tonightSleep = calculateNightSleepForDate(selectedDate, activities);
+    if (tonightSleep && tonightSleep.isCompleted) {
+      return {
+        ...tonightSleep,
+        label: 'Ngủ đêm',
+        tooltip: `Từ ${tonightSleep.bedtimeStr} → ${tonightSleep.wakeStr} (sáng hôm sau)`,
+      };
+    }
+
+    // 2. If selectedDate bedtime has not completed, check if a night sleep ended on selectedDate morning
+    const [y, m, d] = selectedDate.split('-').map(Number);
+    const prevDateObj = new Date(y, m - 1, d - 1);
+    const prevDateStr = getLocalDateString(prevDateObj);
+
+    const prevNightSleep = calculateNightSleepForDate(prevDateStr, activities);
+    if (prevNightSleep && prevNightSleep.isCompleted) {
+      return {
+        ...prevNightSleep,
+        label: 'Ngủ đêm',
+        tooltip: `Đêm qua: Từ ${prevNightSleep.bedtimeStr} (hôm trước) → ${prevNightSleep.wakeStr} (sáng nay)`,
+      };
+    }
+
+    // Bedtime has started on selectedDate but morning wake not yet logged
+    if (tonightSleep && !tonightSleep.isCompleted) {
+      return tonightSleep;
+    }
+
+    return null;
+  }, [activities, selectedDate]);
 
   // Auto-calculate feeding intervals (how long each feed is after the previous feed)
   const feedingIntervalData = useMemo(() => {
@@ -210,7 +325,7 @@ export default function Dashboard() {
   const handleDateChange = (daysOffset) => {
     const [y, m, d] = selectedDate.split('-').map(Number);
     const dateObj = new Date(y, m - 1, d + daysOffset);
-    setSelectedDate(getLocalDateString(dateObj));
+    updateSelectedDate(getLocalDateString(dateObj));
   };
 
   const isToday = useMemo(() => {
@@ -240,6 +355,8 @@ export default function Dashboard() {
             .map((a) => (a.id === payload.id ? res.data : a))
             .sort((a, b) => new Date(a.start_time) - new Date(b.start_time))
         );
+        const actDate = getLocalDateString(new Date(res.data.start_time));
+        updateSelectedDate(actDate);
       } else {
         // Create new
         const res = await api.post('/activities/', {
@@ -254,7 +371,7 @@ export default function Dashboard() {
           [...prev, savedAct].sort((a, b) => new Date(a.start_time) - new Date(b.start_time))
         );
         const actDate = getLocalDateString(new Date(savedAct.start_time));
-        setSelectedDate(actDate);
+        updateSelectedDate(actDate);
       }
     } catch (err) {
       console.error(err);
@@ -374,7 +491,7 @@ export default function Dashboard() {
             ) : (
               <button
                 type="button"
-                onClick={() => setSelectedDate(getLocalDateString())}
+                onClick={() => updateSelectedDate(getLocalDateString())}
                 className="text-[10px] bg-gray-100 hover:bg-pink-100 text-gray-600 hover:text-pink-700 font-semibold px-1.5 py-0.2 rounded-md transition"
                 title="Về hôm nay"
               >
@@ -385,7 +502,7 @@ export default function Dashboard() {
               type="date"
               value={selectedDate}
               onChange={(e) => {
-                if (e.target.value) setSelectedDate(e.target.value);
+                if (e.target.value) updateSelectedDate(e.target.value);
               }}
               className="w-6 h-5 opacity-0 absolute left-0 cursor-pointer"
             />
@@ -404,12 +521,12 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Sticky Day Summary Bar (WT • ST • Sữa • Cháo) */}
+      {/* Sticky Day Summary Bar (Thức • Ngủ ngày • Ngủ đêm • Sữa • Cháo) */}
       <div className="bg-gradient-to-r from-zinc-900 to-zinc-950 text-white rounded-2xl px-4 py-2.5 shadow-md mb-2.5 flex items-center justify-between font-mono">
         <div className="flex items-center gap-3.5 text-xs font-bold flex-wrap">
           <div>
             <span className="text-gray-400 text-[10px] uppercase block tracking-wider font-sans">
-              WT (Thức)
+              Thức
             </span>
             <span className="text-emerald-400 text-sm">
               {routineData.totals.wtFormatted || '0p'}
@@ -420,12 +537,29 @@ export default function Dashboard() {
 
           <div>
             <span className="text-gray-400 text-[10px] uppercase block tracking-wider font-sans">
-              ST (Ngủ)
+              Ngủ ngày
             </span>
             <span className="text-sky-400 text-sm">
               {routineData.totals.stFormatted || '0p'}
             </span>
           </div>
+
+          {nightSleepData && nightSleepData.isCompleted && (
+            <>
+              <div className="w-[1px] h-6 bg-zinc-800" />
+              <div>
+                <span className="text-gray-400 text-[10px] uppercase block tracking-wider font-sans">
+                  {nightSleepData.label || 'Ngủ đêm'}
+                </span>
+                <span
+                  className="text-purple-300 text-sm font-extrabold"
+                  title={nightSleepData.tooltip || `Từ ${nightSleepData.bedtimeStr} → ${nightSleepData.wakeStr}`}
+                >
+                  {nightSleepData.durationFormatted}
+                </span>
+              </div>
+            </>
+          )}
 
           <div className="w-[1px] h-6 bg-zinc-800" />
 
@@ -515,7 +649,7 @@ export default function Dashboard() {
             : null
         }
         onJumpToDate={(d) => {
-          setSelectedDate(d);
+          updateSelectedDate(d);
         }}
       />
 

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models.activity import GrowthLog
 from app.models.user import User
-from app.schemas.growth import GrowthLogCreate, GrowthLogResponse
+from app.schemas.growth import GrowthLogCreate, GrowthLogResponse, GrowthLogUpdate
 from app.api.v1.deps import get_current_user
 
 router = APIRouter()
@@ -43,6 +43,26 @@ def create_growth_log(
     db.commit()
     db.refresh(growth_log)
     return growth_log
+
+
+@router.put("/{log_id}", response_model=GrowthLogResponse)
+def update_growth_log(
+    log_id: UUID,
+    log_in: GrowthLogUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    log = db.query(GrowthLog).filter(GrowthLog.id == log_id).first()
+    if not log:
+        raise HTTPException(status_code=404, detail="Growth log not found")
+
+    update_data = log_in.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(log, field, value)
+
+    db.commit()
+    db.refresh(log)
+    return log
 
 
 @router.delete("/{log_id}")

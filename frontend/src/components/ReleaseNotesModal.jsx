@@ -1,10 +1,91 @@
 import React, { useState, useEffect } from 'react';
 import { X, Sparkles, Check } from 'lucide-react';
 
-export const CURRENT_RELEASE_VERSION = 'v1.2.0';
+export const CURRENT_RELEASE_VERSION = 'v1.4.1';
 export const RELEASE_STORAGE_KEY = 'momcare_dismissed_release_version';
 
 const RELEASE_NOTES = [
+  {
+    version: 'v1.4.1',
+    date: '30/10/2026',
+    title: 'Vá lỗi giữ ngày khi tải lại trang & Hoàn thiện tính giấc ngủ đêm',
+    highlights: [
+      {
+        emoji: '🔄',
+        title: 'Khắc phục lỗi nhảy ngày khi tải lại trang (F5)',
+        desc: 'Ghi nhớ ngày bạn đang xem trong phiên làm việc. Khi lưu cữ hoặc bấm F5 reload, app luôn giữ nguyên đúng ngày đang thao tác, không bị nhảy sang ngày hôm sau làm ẩn cữ vừa lưu.',
+      },
+      {
+        emoji: '🌙',
+        title: 'Hiển thị giấc ngủ đêm 2 chiều thông minh',
+        desc: 'Vừa gán chuẩn xác vào chu kỳ ngày bắt đầu ngủ (hôm trước), vừa tự động hiển thị ngay trên thanh tóm tắt sáng hôm nay khi bé thức dậy, không lo bị trống hay phải lùi ngày để xem.',
+      },
+      {
+        emoji: '⚡',
+        title: 'Đồng bộ thao tác cữ Đêm & Nút "Hiện tại"',
+        desc: 'Nút "Đêm" trên menu xòe quạt được tự động nhận diện tính giờ ngủ đêm. Nút "Hiện tại" trong form cập nhật đồng thời cả ngày và giờ theo thời gian thực.',
+      },
+    ],
+  },
+  {
+    version: 'v1.4.0',
+    date: '29/10/2026',
+    title: 'Tối ưu chu kỳ giấc ngủ đêm & Tinh gọn giao diện',
+    highlights: [
+      {
+        emoji: '🌙',
+        title: 'Giấc ngủ đêm gán vào ngày bắt đầu ngủ',
+        desc: 'Khi bé thức dậy sáng hôm nay, thời gian ngủ đêm được tính toán chính xác và hiển thị ở ngày hôm trước (ngày bắt đầu ngủ) trên thanh tóm tắt.',
+      },
+      {
+        emoji: '✨',
+        title: 'Giao diện danh sách gọn gàng, liền mạch',
+        desc: 'Gỡ bỏ banner tím trùng lặp ở giữa danh sách cữ, tập trung toàn bộ thông tin Thức, Ngủ ngày và Ngủ đêm lên thanh tóm tắt trên cùng.',
+      },
+      {
+        emoji: '🇻🇳',
+        title: 'Đồng bộ hiển thị Thức & Ngủ trên từng Nap',
+        desc: 'Đổi ký hiệu WT thành "Thức" và ST thành "Ngủ" ở từng cữ Nap giúp ba mẹ theo dõi cữ sinh hoạt của con dễ hiểu và trực quan hơn.',
+      },
+    ],
+  },
+  {
+    version: 'v1.3.0',
+    date: '29/10/2026',
+    title: 'Thống kê lượng sữa (ml), Cân nặng & Tính giấc ngủ đêm',
+    highlights: [
+      {
+        emoji: '🍼',
+        title: 'Thống kê ml sữa của ngày thay vì số lần',
+        desc: 'Tổng lượng sữa (ml) hiển thị nổi bật ở thẻ tổng kết và biểu đồ 7 ngày chuyển sang đo lường đơn vị ml trực quan.',
+      },
+      {
+        emoji: '⚖️',
+        title: 'Theo dõi Cân nặng & Chiều cao phát triển',
+        desc: 'Thêm mục mới trong trang Thống kê giúp theo dõi cân nặng (kg), chiều cao (cm), vòng đầu và vẽ biểu đồ tăng trưởng theo thời gian.',
+      },
+      {
+        emoji: '🌙',
+        title: 'Tự động tính thời gian ngủ đêm xuyên ngày',
+        desc: 'Tự động tính chính xác thời gian bé ngủ đêm từ lúc bắt đầu ngủ tối hôm trước cho đến lúc thức dậy sáng hôm sau.',
+      },
+      {
+        emoji: '🇻🇳',
+        title: 'Đổi WT thành Thức, ST thành Ngủ',
+        desc: 'Thay thế các ký tự viết tắt bằng tiếng Việt thân thiện: Thức (thời gian thức) và Ngủ (thời gian ngủ ngày).',
+      },
+      {
+        emoji: '⚡',
+        title: 'Mốc chọn nhanh sữa 100ml - 200ml (+10ml)',
+        desc: 'Bỏ mốc 90ml, bổ sung đầy đủ dải nút chọn nhanh 100, 110, 120, ..., 200ml phù hợp với sức ăn của bé.',
+      },
+      {
+        emoji: '🎨',
+        title: 'Lưu trạng thái Theme Sáng / Tối',
+        desc: 'Trạng thái màu nền ghi chú (Sáng / Tối) được lưu tự động trên thiết bị, không bị reset khi tải lại trang.',
+      },
+    ],
+  },
   {
     version: 'v1.2.0',
     date: '12/10/2026',
@@ -33,7 +114,7 @@ const RELEASE_NOTES = [
       {
         emoji: '📅',
         title: 'Chuẩn hóa lịch ngày hôm nay & giao diện Nap',
-        desc: 'Luôn tự động mở đúng ngày hôm nay khi vào app, tinh gọn tiêu đề Nap và tính chính xác WT (Thức) - ST (Ngủ).',
+        desc: 'Luôn tự động mở đúng ngày hôm nay khi vào app, tinh gọn tiêu đề Nap và tính chính xác thời gian Thức - Ngủ.',
       },
     ],
   },
